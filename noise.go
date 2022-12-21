@@ -67,8 +67,10 @@ func (c *CipherState) hasKey() bool {
 }
 
 func (cs *CipherState) nonce() []byte {
-	var nonceBytes [12]byte // RFC7539 specifies 12 bytes for nonce.
-	binary.BigEndian.PutUint64(nonceBytes[4:], cs.n)
+	// RFC7539 specifies 12 bytes for nonce.
+	// TODO: extract this to function setup when creating handshake pattern
+	var nonceBytes [12]byte
+	binary.LittleEndian.PutUint64(nonceBytes[4:], cs.n)
 	return nonceBytes[:]
 }
 
