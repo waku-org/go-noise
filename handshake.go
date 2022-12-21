@@ -284,6 +284,22 @@ func (h *Handshake) FinalizeHandshake() (*HandshakeResult, error) {
 }
 
 // HandshakeComplete indicates whether the handshake process is complete or not
-func (hs *Handshake) IsComplete() bool {
-	return hs.hsResult != nil
+func (h *Handshake) IsComplete() bool {
+	return h.hsResult != nil
+}
+
+func (h *Handshake) LocalEphemeralKeypair() Keypair {
+	return h.hs.e
+}
+
+func (h *Handshake) RemoteStaticPublicKey() []byte {
+	return h.hs.rs
+}
+
+func (h *Handshake) RemoteEphemeralPublicKey() []byte {
+	return h.hs.re
+}
+
+func (h *Handshake) H() []byte {
+	return h.hs.ss.h
 }
