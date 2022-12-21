@@ -104,15 +104,17 @@ type HandshakePattern struct {
 	messagePatterns    []MessagePattern
 	hashFn             func() hash.Hash
 	cipherFn           func([]byte) (cipher.AEAD, error)
+	tagSize            int
 	dhKey              DHKey
 }
 
-func NewHandshakePattern(protocolID byte, name string, hashFn func() hash.Hash, cipherFn func([]byte) (cipher.AEAD, error), dhKey DHKey, preMessagePatterns []PreMessagePattern, messagePatterns []MessagePattern) HandshakePattern {
+func NewHandshakePattern(protocolID byte, name string, hashFn func() hash.Hash, cipherFn func([]byte) (cipher.AEAD, error), tagSize int, dhKey DHKey, preMessagePatterns []PreMessagePattern, messagePatterns []MessagePattern) HandshakePattern {
 	return HandshakePattern{
 		protocolID:         protocolID,
 		name:               name,
 		hashFn:             hashFn,
 		cipherFn:           cipherFn,
+		tagSize:            tagSize,
 		dhKey:              dhKey,
 		premessagePatterns: preMessagePatterns,
 		messagePatterns:    messagePatterns,
@@ -153,6 +155,7 @@ var K1K1 = NewHandshakePattern(
 	"Noise_K1K1_25519_ChaChaPoly_SHA256",
 	sha256.New,
 	chacha20poly1305.New,
+	16,
 	DH25519,
 	[]PreMessagePattern{
 		NewPreMessagePattern(Right, []NoiseTokens{S}),
@@ -170,6 +173,7 @@ var XK1 = NewHandshakePattern(
 	"Noise_XK1_25519_ChaChaPoly_SHA256",
 	sha256.New,
 	chacha20poly1305.New,
+	16,
 	DH25519,
 	[]PreMessagePattern{
 		NewPreMessagePattern(Left, []NoiseTokens{S}),
@@ -186,6 +190,7 @@ var XX = NewHandshakePattern(
 	"Noise_XX_25519_ChaChaPoly_SHA256",
 	sha256.New,
 	chacha20poly1305.New,
+	16,
 	DH25519,
 	EmptyPreMessage,
 	[]MessagePattern{
@@ -200,6 +205,7 @@ var XXpsk0 = NewHandshakePattern(
 	"Noise_XXpsk0_25519_ChaChaPoly_SHA256",
 	sha256.New,
 	chacha20poly1305.New,
+	16,
 	DH25519,
 	EmptyPreMessage,
 	[]MessagePattern{
@@ -214,6 +220,7 @@ var WakuPairing = NewHandshakePattern(
 	"Noise_WakuPairing_25519_ChaChaPoly_SHA256",
 	sha256.New,
 	chacha20poly1305.New,
+	16,
 	DH25519,
 	[]PreMessagePattern{
 		NewPreMessagePattern(Left, []NoiseTokens{E}),

@@ -2,7 +2,6 @@ package noise
 
 import (
 	"bytes"
-	"crypto/ed25519"
 	"encoding/binary"
 	"errors"
 )
@@ -106,8 +105,6 @@ func (p *PayloadV2) Serialize() ([]byte, error) {
 	return payloadBuf.Bytes(), nil
 }
 
-const ChaChaPolyTagSize = byte(16)
-
 // Deserializes a byte sequence to a PayloadV2 object according to https://rfc.vac.dev/spec/35/.
 // The input serialized payload concatenates the output PayloadV2 object fields as
 // payload = ( protocolId || serializedHandshakeMessageLen || serializedHandshakeMessage || transportMessageLen || transportMessage)
@@ -126,8 +123,14 @@ func DeserializePayloadV2(payload []byte) (*PayloadV2, error) {
 		return nil, err
 	}
 
-	if !IsProtocolIDSupported(result.ProtocolId) {
-		return nil, errors.New("unsupported protocol")
+	var pattern HandshakePattern
+	var err error
+
+	if result.ProtocolId != None {
+		pattern, err = GetHandshakePattern(result.ProtocolId)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// We read the Handshake Message length (1 byte)
@@ -150,13 +153,13 @@ func DeserializePayloadV2(payload []byte) (*PayloadV2, error) {
 
 		if flag == 0 {
 			// If the key is unencrypted, we only read the X coordinate of the EC public key and we deserialize into a Noise Public Key
-			pkLen := ed25519.PublicKeySize
+			pkLen := pattern.dhKey.DHLen()
 			var pkBytes SerializedNoisePublicKey = make([]byte, pkLen)
 			if err := binary.Read(payloadBuf, binary.BigEndian, &pkBytes); err != nil {
 				return nil, err
 			}
 
-			serializedPK := SerializedNoisePublicKey(make([]byte, ed25519.PublicKeySize+1))
+			serializedPK := SerializedNoisePublicKey(make([]byte, pkLen+1))
 			serializedPK[0] = flag
 			copy(serializedPK[1:], pkBytes)
 
@@ -169,7 +172,7 @@ func DeserializePayloadV2(payload []byte) (*PayloadV2, error) {
 			written += uint8(1 + pkLen)
 		} else if flag == 1 {
 			// If the key is encrypted, we only read the encrypted X coordinate and the authorization tag, and we deserialize into a Noise Public Key
-			pkLen := ed25519.PublicKeySize + ChaChaPolyTagSize
+			pkLen := pattern.dhKey.DHLen() + pattern.tagSize
 			// TODO: duplicated code: ==============
 
 			var pkBytes SerializedNoisePublicKey = make([]byte, pkLen)
@@ -177,7 +180,7 @@ func DeserializePayloadV2(payload []byte) (*PayloadV2, error) {
 				return nil, err
 			}
 
-			serializedPK := SerializedNoisePublicKey(make([]byte, ed25519.PublicKeySize+1))
+			serializedPK := SerializedNoisePublicKey(make([]byte, pkLen+1))
 			serializedPK[0] = flag
 			copy(serializedPK[1:], pkBytes)
 

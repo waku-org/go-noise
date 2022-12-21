@@ -126,7 +126,13 @@ func handshakeTest(t *testing.T, hsAlice *Handshake, hsBob *Handshake) {
 		encryptedPayload, err := aliceHSResult.WriteMessage(message, defaultMessageNametagBuffer)
 		require.NoError(t, err)
 
-		plaintext, err := bobHSResult.ReadMessage(encryptedPayload, defaultMessageNametagBuffer)
+		serializedPayload, err := encryptedPayload.Serialize()
+		require.NoError(t, err)
+
+		deserializedPayload, err := DeserializePayloadV2(serializedPayload)
+		require.NoError(t, err)
+
+		plaintext, err := bobHSResult.ReadMessage(deserializedPayload, defaultMessageNametagBuffer)
 		require.NoError(t, err)
 
 		require.Equal(t, message, plaintext)
@@ -137,7 +143,13 @@ func handshakeTest(t *testing.T, hsAlice *Handshake, hsBob *Handshake) {
 		encryptedPayload, err = bobHSResult.WriteMessage(message, defaultMessageNametagBuffer)
 		require.NoError(t, err)
 
-		plaintext, err = aliceHSResult.ReadMessage(encryptedPayload, defaultMessageNametagBuffer)
+		serializedPayload, err = encryptedPayload.Serialize()
+		require.NoError(t, err)
+
+		deserializedPayload, err = DeserializePayloadV2(serializedPayload)
+		require.NoError(t, err)
+
+		plaintext, err = aliceHSResult.ReadMessage(deserializedPayload, defaultMessageNametagBuffer)
 		require.NoError(t, err)
 
 		require.Equal(t, message, plaintext)
